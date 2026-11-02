@@ -302,7 +302,8 @@ window.addEventListener("DOMContentLoaded", () => {
                 grossDifference: 0,
                 percentDifference: 0,
                 ////Add new row to states with no tax///
-                medianIncome: value.medianIncome
+                medianIncome: value.medianIncome,
+                unemploymentRate: value.unemploymentRate // Updated to include new dataset
               }
             })
             if (value.geometry) {
@@ -365,7 +366,8 @@ window.addEventListener("DOMContentLoaded", () => {
                 totalExemptions: Math.trunc(totalExemptions).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","),
                 totalCredits: Math.trunc(totalCredits).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","),
                 ///////////Add new row here too //////////                            
-                medianIncome: value.medianIncome
+                medianIncome: value.medianIncome,
+                unemploymentRate: value.unemploymentRate
 
               }
             })
