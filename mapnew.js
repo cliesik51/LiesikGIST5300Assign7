@@ -136,13 +136,14 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   //Make function to execture query
-  var loadAdditionalData = function () {
+  var loadMedianIncomeData = function () {
     ////Create a new query object and give it the correct properties for what you want
-    let additionalQuery = medianIncomeLayer.createQuery();
-    additionalQuery.returnGeometry = false;
-    additionalQuery.outFields = "*"
+    let medianIncomeQuery = medianIncomeLayer.createQuery();
+    medianIncomeQuery.where = "STUSPS NOT IN ('DC', 'PR')"; // noticed that Wyoming was missing the median incom data. This was because the dataset included DC and PR, so I filtered those out.
+    medianIncomeQuery.returnGeometry = false;
+    medianIncomeQuery.outFields = "*"
     ////execute query on your new layer
-    medianIncomeLayer.queryFeatures(additionalQuery).then(function (r) {
+    medianIncomeLayer.queryFeatures(medianIncomeQuery).then(function (r) {
       console.log(r)
       r.features.forEach(function (feature) {
         // prefer matching by postal abbreviation (STUSPS)
@@ -155,7 +156,7 @@ window.addEventListener("DOMContentLoaded", () => {
         });
 
         if (!matchKey) {
-          console.warn('loadAdditionalData: no matching stateObj entry for', abbr, feature.attributes.NAME);
+          console.warn('loadMedianIncomeData: no matching stateObj entry for', abbr, feature.attributes.NAME);
           return;
         }
 
@@ -167,20 +168,20 @@ window.addEventListener("DOMContentLoaded", () => {
           income = feature.attributes['MEDIAN_INCOME'];
         } else {
           // if the expected field isn't present, log available keys to pick the correct one
-          console.warn('loadAdditionalData: median income field not found for', abbr, 'attributes keys:', Object.keys(feature.attributes));
+          console.warn('loadMedianIncomeData: median income field not found for', abbr, 'attributes keys:', Object.keys(feature.attributes));
         }
 
         // set medianIncome (may be null if no field found)
         stateObj[matchKey]['medianIncome'] = income;
       });
-      console.log('loadAdditionalData: median income loaded');
+      console.log('loadMedianIncomeData: median income loaded');
       medianLoaded = true;
       if (statesLoaded && medianLoaded) {
         if (submitBtn) submitBtn.disabled = false;
         console.log('All data loaded — submit enabled');
       }
     }).catch(function (err) {
-      console.error('loadAdditionalData failed:', err);
+      console.error('loadMedianIncomeData failed:', err);
       medianLoaded = true;
       if (statesLoaded && medianLoaded) {
         if (submitBtn) submitBtn.disabled = false;
@@ -190,8 +191,14 @@ window.addEventListener("DOMContentLoaded", () => {
     })
   }
 
-  loadAdditionalData()
+  loadMedianIncomeData()
 
+  // Add new unemployment rate date for GIST 5300 Assignment 7
+  var unemploymentRateUrl = "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/ACS_Employment_Status_Boundaries/FeatureServer/0"
+  const unemploymentRateLayer = new FeatureLayer({
+    url: unemploymentRateUrl,
+    title: "Unemployment Rate (Percentage)",
+  });
 
   // helper function to find tax rate for given income
   const between = (x, min, max) => {
