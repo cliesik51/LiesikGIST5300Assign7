@@ -46,6 +46,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   let statesLoaded = false;
   let medianLoaded = false;
+  let unemploymentLoaded = false; // added to complete the disable submit check for unemployment layer
 
   // disable submit until required data is loaded
   const submitBtn = document.querySelector('form button[type="submit"]');
@@ -102,18 +103,18 @@ window.addEventListener("DOMContentLoaded", () => {
         })
         console.log('loadStates: geometry loaded for states');
         statesLoaded = true;
-        //!!if you have a new dataset, you also need to check if all are loaded before enabling submit in the following if statement.
-        if (statesLoaded && medianLoaded) {
+        //updated to include new dataset
+        if (statesLoaded && medianLoaded && unemploymentLoaded) {
           if (submitBtn) submitBtn.disabled = false;
           console.log('All data loaded — submit enabled');
         }
         console.log(stateObj)
-        //!! If you have a new dataset, you also need to update the condition if below to include your new flag variable.
+        //updated to include new dataset
       }).catch(function (err) {
         console.error('loadStates failed:', err);
         // avoid leaving submit permanently disabled
         statesLoaded = true;
-        if (medianLoaded && submitBtn) submitBtn.disabled = false;
+        if (medianLoaded && unemploymentLoaded && submitBtn) submitBtn.disabled = false;
       });
 
 
@@ -176,14 +177,14 @@ window.addEventListener("DOMContentLoaded", () => {
       });
       console.log('loadMedianIncomeData: median income loaded');
       medianLoaded = true;
-      if (statesLoaded && medianLoaded) {
+      if (statesLoaded && medianLoaded && unemploymentLoaded) { //updated to include new dataset
         if (submitBtn) submitBtn.disabled = false;
         console.log('All data loaded — submit enabled');
       }
     }).catch(function (err) {
       console.error('loadMedianIncomeData failed:', err);
       medianLoaded = true;
-      if (statesLoaded && medianLoaded) {
+      if (statesLoaded && medianLoaded && unemploymentLoaded) { //updated to include new dataset
         if (submitBtn) submitBtn.disabled = false;
       } else {
         if (submitBtn) submitBtn.disabled = false;
@@ -199,6 +200,62 @@ window.addEventListener("DOMContentLoaded", () => {
     url: unemploymentRateUrl,
     title: "Unemployment Rate (Percentage)",
   });
+
+  // Make function to query unemployment rate data
+   var loadUnemploymentRateData = function () {
+    ////Create a new query object and give it the correct properties for what you want
+    let unemploymentRateQuery = unemploymentRateLayer.createQuery();
+    unemploymentRateQuery.where = "STUSPS NOT IN ('DC', 'PR')"; // noticed that Wyoming was missing the median incom data. This was because the dataset included DC and PR, so I filtered those out.
+    unemploymentRateQuery.returnGeometry = false;
+    unemploymentRateQuery.outFields = "*"
+    ////execute query on your new layer
+    unemploymentRateLayer.queryFeatures(unemploymentRateQuery).then(function (r) {
+      console.log(r)
+      r.features.forEach(function (feature) {
+        // prefer matching by postal abbreviation (STUSPS)
+        var abbr = feature.attributes && feature.attributes['STUSPS'];
+        if (!abbr || abbr === "DC") return;
+
+        // find matching key in stateObj by abb (case-insensitive)
+        var matchKey = Object.keys(stateObj).find(k => {
+          return stateObj[k] && stateObj[k].abb && stateObj[k].abb.toUpperCase() === abbr.toUpperCase();
+        });
+
+        if (!matchKey) {
+          console.warn('loadUnemploymentRateData: no matching stateObj entry for', abbr, feature.attributes.NAME);
+          return;
+        }
+
+        // set the unemployment rate field and error code if none are found
+        var unemployment = null;
+        if ('B23025_calc_pctUnempE' in feature.attributes) {
+          unemployment = feature.attributes['B23025_calc_pctUnempE'];
+        } else {
+          // if the expected field isn't present, log available keys to pick the correct one
+          console.warn('loadUnemploymentRateData: unemployment rate field not found for', abbr, 'attributes keys:', Object.keys(feature.attributes));
+        }
+
+        // set unemploymentRate (may be null if no field found)
+        stateObj[matchKey]['unemploymentRate'] = unemployment;
+      });
+      console.log('loadUnemploymentRateData: unemployment rate loaded');
+      unemploymentLoaded = true;
+      if (statesLoaded && medianLoaded && unemploymentLoaded) {
+        if (submitBtn) submitBtn.disabled = false;
+        console.log('All data loaded — submit enabled');
+      }
+    }).catch(function (err) {
+      console.error('loadUnemploymentRateData failed:', err);
+      unemploymentLoaded = true;
+      if (statesLoaded && medianLoaded && unemploymentLoaded) {
+        if (submitBtn) submitBtn.disabled = false;
+      } else {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    })
+  }
+
+  loadUnemploymentRateData()
 
   // helper function to find tax rate for given income
   const between = (x, min, max) => {
