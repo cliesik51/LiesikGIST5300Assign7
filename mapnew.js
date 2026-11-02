@@ -140,7 +140,7 @@ window.addEventListener("DOMContentLoaded", () => {
   var loadMedianIncomeData = function () {
     ////Create a new query object and give it the correct properties for what you want
     let medianIncomeQuery = medianIncomeLayer.createQuery();
-    medianIncomeQuery.where = "STUSPS NOT IN ('DC', 'PR')"; // noticed that Wyoming was missing the median incom data. This was because the dataset included DC and PR, so I filtered those out.
+    medianIncomeQuery.where = "STUSPS NOT IN ('DC', 'PR')"; // noticed that Wyoming was missing the median income data. This was because the dataset included DC and PR, so I filtered those out.
     medianIncomeQuery.returnGeometry = false;
     medianIncomeQuery.outFields = "*"
     ////execute query on your new layer
@@ -205,7 +205,7 @@ window.addEventListener("DOMContentLoaded", () => {
    var loadUnemploymentRateData = function () {
     ////Create a new query object and give it the correct properties for what you want
     let unemploymentRateQuery = unemploymentRateLayer.createQuery();
-    unemploymentRateQuery.where = "STUSPS NOT IN ('DC', 'PR')"; // noticed that Wyoming was missing the median incom data. This was because the dataset included DC and PR, so I filtered those out.
+    unemploymentRateQuery.where = "STUSPS NOT IN ('DC', 'PR')"; // included the same filter as the median income to filter out Washington D.C and Puerto Rico.
     unemploymentRateQuery.returnGeometry = false;
     unemploymentRateQuery.outFields = "*"
     ////execute query on your new layer
@@ -367,7 +367,7 @@ window.addEventListener("DOMContentLoaded", () => {
                 totalCredits: Math.trunc(totalCredits).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","),
                 ///////////Add new row here too //////////                            
                 medianIncome: value.medianIncome,
-                unemploymentRate: value.unemploymentRate
+                unemploymentRate: value.unemploymentRate // Updated to include new dataset
 
               }
             })
